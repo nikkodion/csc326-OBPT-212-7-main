@@ -1,0 +1,218 @@
+<!DOCTYPE HTML>
+<head>
+<title>Add an Ingredient</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+<style>
+    html, body {
+        margin: 0px;
+        padding: 0px;
+    }
+
+    .flex {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .flex > div {
+        flex: 1;
+        text-align: center;
+        padding: 30px;
+    }
+    
+    .returnBox {
+        position: fixed;
+        top: 15px;
+        left: 40px;
+        border: solid;
+        border-radius: 20px;
+        width: 200px;
+        height: 50px;
+        padding: 5px;
+        text-align: center;
+        background-color: #525252;
+        font-size: 24px;
+    }
+    
+    .flex > .fieldBox {
+        background-color: #d6d6d6;
+        flex: 0 0 300px;
+        padding: 15px;
+    }
+    
+    .flex > .enterBox {
+        background-color: white;
+        flex: 0 0 400px;
+        padding: 15px;
+        border-left: none;
+    }
+    
+    .flex > .subBox {
+        background-color: white;
+        flex: 0 0 300px;
+        padding: 20px;
+    }
+    
+    .enterBox, .fieldBox, .subBox {
+        color: Black;
+        text-align: center;
+        font-size: 24px;
+        border: solid;
+        border-color: Black;
+        border-width: 1px;
+        margin: 10px 0px 10px;
+    }
+    
+    header {
+        height: 100px;
+        background-color: #d6d6d6;
+        padding: 0px;
+        font-size: 26px;
+        margin: 0px;
+        border-top: solid;
+        border-bottom: solid;
+        border-width: 1px;
+    }
+    
+    .subBox, .returnBox {
+    	transition-duration: 0.4s;
+    	cursor: pointer;
+    }
+    
+    .subBox:hover, .returnBox:hover {
+    	background-color: black;
+    	color: white;
+    }
+    
+</style>
+
+</head>
+
+
+
+<body>
+
+	<div layout:fragment="content">
+		<script	src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.js"></script>
+		<script>
+			/* Without these comments, Thymeleaf will try to parse the Javascript as XML and break itself sometimes */
+			/*<![CDATA[*/ 
+			var app = angular.module('myApp', []);
+			app.controller('populateCtrl', function($scope, $http, $q) {
+				
+				
+				$scope.response;
+				$scope.isvalid = true;
+				
+				$scope.x;
+				$scope.y;
+				$scope.z;
+				
+				/* Logic that handles controlling your page goes here */
+				
+				$scope.reset = function() {
+					$scope.ingredient = {
+						name: '',
+						amount: ''
+					};
+						
+				}
+				
+				$scope.myFunction = function () {
+					
+					$scope.ingredient.name = $scope.x
+					$scope.ingredient.amount += $scope.y
+					
+					if ($scope.x != null && $scope.x.length > 0) {
+						console.log("Valid name")
+						
+						if ($scope.y != null && $scope.y >= 0) {
+							console.log("Valid amount")
+				    		
+				    		$scope.success = false;
+							$scope.failure = false;
+				    		
+				    		// Put Op
+				    		$http.post("/api/v1/inventory", $scope.ingredient).then(
+									function(success) {
+										$scope.success = true;
+										$scope.failure = false;
+										
+										$scope.response = {
+												"color": "green"
+										}
+										$scope.z = `Ingredient "${$scope.x}" with amount "${$scope.y}" created successfully.`
+										
+									}, function(rejection) {
+										$scope.response = {
+												"color": "red"
+										}
+										$scope.z = `Error while adding ingredient.`
+									});
+				    		
+						} else {
+							$scope.response = {
+									"color": "red"
+							}
+							$scope.z = "Error: invalid amount."
+						}
+						
+						
+					} else {
+						$scope.response = {
+								"color": "red"
+						}
+						$scope.z = "Error: invalid name."
+					}
+					
+					$scope.reset();
+
+					
+				}
+				
+				$scope.reset();
+
+			});
+			
+			/* Without these comments, Thymeleaf will try to parse the Javascript as XML and break itself sometimes */
+			/*]]>*/
+		</script>
+
+		<div ng-app="myApp" ng-controller="populateCtrl">
+
+			<!--- Various HTML elements, with extra tags telling Angular how to work with them, go here -->
+			<header>
+        		<button class="returnBox" style="color:white" onclick="window.location.href='http://localhost:8080/';">Back</button>
+        		<div class="flex">
+            		<div>Enter name of ingredient to add and initial amount in inventory below</div>
+        		</div>
+   			</header>
+    
+		    <div class="flex">
+		        <div class="fieldBox">Name</div>
+		        <input class="enterBox" type="text" ng-model="x" required="true" />
+		    </div>
+    
+		    <div class="flex">
+		        <div class="fieldBox">Initial Amount</div>
+		        <input class="enterBox" type="text" ng-model="y" required="true" />
+		    </div>
+    
+		    <div class="flex">
+		        <button class="subBox" ng-click="myFunction()">Add Ingredient</button>
+		    </div>
+		    
+		    <div class="flex">
+		        <p ng-model="z" ng-style="response">{{z}}</p>
+		    </div>
+
+		</div>
+		
+	</div>
+    
+    
+
+</body>
+
+</html>

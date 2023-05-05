@@ -1,0 +1,250 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>Add a Recipe</title>
+<style>
+	@import 'https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css';
+	@import 'https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css';
+	
+	.username.ng-valid {
+		background-color: lightgreen;
+	}
+	
+	.username.ng-dirty.ng-invalid-required {
+		background-color: red;
+	}
+	
+	.username.ng-dirty.ng-invalid-min {
+		background-color: yellow;
+	}
+	
+	.email.ng-valid {
+		background-color: lightgreen;
+	}
+	
+	.email.ng-dirty.ng-invalid-required {
+		background-color: red;
+	}
+	
+</style>
+<link rel="stylesheet" href="css/bootstrap.css" />
+<link rel="stylesheet" href="css/app.css" />
+</head>
+
+<body>
+	<div layout:fragment="content">
+		<script	src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.js"></script>
+		<script>
+			/* Without these comments, Thymeleaf will try to parse the Javascript as XML and break itself sometimes */
+			/*<![CDATA[*/ 
+			var app = angular.module('myApp', []);
+			app.controller('populateCtrl', function($scope, $http, $q) {
+				
+				$scope.response;
+				$scope.name;
+				$scope.price;
+				$scope.message;
+				$scope.isvalid = true;
+				
+				$scope.recipe = {
+						name: '',
+						price: '',
+						ingredients: []
+					};
+				
+				$scope.ingredient = {
+						id: '',
+						name: '',
+						amount: ''
+				};
+				
+				$scope.reset = function() {
+					$scope.recipe = {
+						name: '',
+						price: '',
+						ingredients: []
+					};
+				}
+				
+				
+				$scope.ingredients = [];
+				$scope.branches = [];
+				$scope.selectedBranches = [];
+				$scope.quantities = [];
+				
+				$http.get("/api/v1/inventory").then( function(response){
+					$scope.ingredients = response.data.ingInventory;
+					console.log(response.data);
+					angular.forEach($scope.ingredients, function(item){
+						$scope.branches.push(item.name);
+					})
+				});
+				
+				console.log($scope.branches);
+				
+				$scope.myFunction = function(){
+					
+					$http.get("/api/v1/recipes/" + $scope.name).then(
+							function(success){
+								$scope.response = {
+										"color": "red"
+								}
+								$scope.message = "Error: recipe with that name already exists";
+								$scope.isvalid = false;
+							}, function(rejection){
+								
+							});
+					
+					if($scope.isvalid == true){
+						$scope.recipe.name = $scope.name;
+						$scope.recipe.price = $scope.price;
+						
+						if($scope.name != null && $scope.name.length > 0){
+							
+							if($scope.price != null && $scope.price >= 0) {
+								$scope.isvalid = true;
+								$scope.checked = 0;
+								for(let i = 0; i < $scope.branches.length; i++){
+									let ing = $scope.branches[i];
+									
+									$scope.ingredient = {
+											id: '',
+											name: '',
+											amount: ''
+									};
+									if($scope.selectedBranches[ing] == true){
+										$scope.ingredient.name = ing;
+										$scope.checked += 1;
+										
+										$http.get("/api/v1/ingredients/" + ing).then(
+												function(response){
+													console.log(response.data.id);
+													$scope.ingredient.id = response.data.id;
+												});
+										
+										$scope.ingredient.amount = $scope.quantities[ing];
+										$scope.recipe.ingredients.push($scope.ingredient);
+										
+									}
+									
+								}
+								console.log($scope.recipe.ingredients);
+								console.log($scope.recipe);
+								
+								if($scope.checked == 0){
+									$scope.response = {
+											"color": "red"
+									}
+									$scope.message = "Error: please select ingredients";
+									$scope.isvalid = false;
+								} 
+								
+								if($scope.isvalid == true){
+									$http.post("/api/v1/recipes", $scope.recipe).then(
+											function(success){
+												$scope.success = true;
+												$scope.failure = false;
+												
+												$scope.response = {
+														"color": "green"
+												}
+												$scope.message = `Recipe "${$scope.name}" has been created successfully`
+												console.log("success");
+												$scope.reset();
+											}, function(rejection){
+												$scope.response = {
+														"color": "red"
+												}
+												$scope.message = "Error while creating recipe. Please verify quantities are positive integers"
+												$scope.reset();
+											});
+								}
+								
+							} else {
+								$scope.response = {
+										"color": "red"
+								}
+								$scope.message = "Error: invalid price";
+							}
+						} else {
+							$scope.response = {
+									"color": "red"
+							}
+							$scope.message = "Error: invalid name";
+						}
+						
+						$scope.reset();
+					}
+				}
+				
+				$scope.reset();
+				
+			
+			/* Without these comments, Thymeleaf will try to parse the Javascript as XML and break itself sometimes */
+			/*]]>*/
+			});
+		</script>
+
+		<div ng-app="myApp" ng-controller="populateCtrl">
+
+	<header>
+        <nav class="navbar navbar-dark bg-dark">
+		  <a class="navbar-brand " href="#">Coffee Maker</a>
+		</nav>
+    </header>
+    
+    <div>
+    	<h2 style="text-align: center">Add Recipe</h2>
+    </div>
+    <div class="row">
+    	<div class="col"></div>
+	    <div class="col">
+		    	<form>
+		    		<div class="form-group row">
+		    			<div class="col">
+					      <label for="recipeName">Recipe Name</label>
+					      <input type="text" class="form-control" id="recipeName" ng-model="name" required>
+					    </div>
+		    		</div>
+		    		<div class="form-group row">
+		    			<div class="col">
+					      <label for="recipePrice">Price</label>
+					      <input type="text" class="form-control" id="recipeName" ng-model="price" required>
+					    </div>
+		    		</div>
+		    		<div class="row">
+		    			<div class="col">
+					 	<label for="recipePrice">Ingredients</label>
+					 	  <div class="input-group-prepend">
+						 	<div class="input-group-text">
+						      <div ng-repeat="branch in branches track by $index">
+						      	<input type="checkbox" 
+						      		ng-model="$parent.selectedBranches[branch]">
+						      		<tt>{{branch}}</tt>
+						      		<input type="text" class="form-control" ng-model="$parent.quantities[branch]"></input>
+						      	</input>
+						      </div>
+						    </div>
+						    
+						   </div>
+						 </div>
+		    		</div>
+		    		<div class="form-group row">
+					    <div class="col-sm-10 my-5">
+					      <button type="submit" class="btn btn-success btn-lg" ng-click="myFunction()">Submit</button>
+					    
+					      <button type="button" class="btn btn-danger btn-lg" ng-click="reset()" onclick="window.location.href='http://localhost:8080/';">Cancel</button>
+					    </div>
+					</div>
+		    	</form>
+		    	
+		    	<div class="flex">
+		        <p ng-model="message" ng-style="response">{{message}}</p>
+		    </div>
+		    	
+    	</div>
+    	<div class="col"></div>
+	</div>
+	
+	
+</body>
